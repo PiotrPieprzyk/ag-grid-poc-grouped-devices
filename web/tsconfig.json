@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "mock-server": ["../mock-server/src/index.ts"]
+    }
+  },
+  "include": ["grouped-cameras/src/**/*", "shared/**/*"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

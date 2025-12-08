@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(dir /b)",
+      "mcp__ag-mcp__detect_version",
+      "mcp__ag-mcp__set_versions",
+      "mcp__ag-mcp__search_docs",
+      "Bash(npm install)",
+      "Bash(npm run test)",
+      "Bash(npm run dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
