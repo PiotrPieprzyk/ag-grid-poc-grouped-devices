@@ -187,7 +187,7 @@ async function handleLocationBridgeCameraMode(
 
         params.success({
             rowData: response.results.map(mapLocation),
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Bridges for a Location
@@ -204,7 +204,7 @@ async function handleLocationBridgeCameraMode(
 
         params.success({
             rowData: response.results.map(mapBridge),
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 2) {
         // Load Cameras for a Bridge
@@ -223,7 +223,7 @@ async function handleLocationBridgeCameraMode(
 
         params.success({
             rowData: response.results.map(mapCamera), // Leaf nodes - no group: true
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
@@ -253,7 +253,7 @@ async function handleLocationCameraMode(
 
         params.success({
             rowData: response.results.map(mapLocation),
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Cameras for a Location (skip bridges)
@@ -270,7 +270,7 @@ async function handleLocationCameraMode(
 
         params.success({
             rowData: response.results, // Leaf nodes - no group: true
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
@@ -301,7 +301,7 @@ async function handleBridgeCameraMode(
 
         params.success({
             rowData: response.results.map(mapBridge),
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Cameras for a Bridge
@@ -318,7 +318,7 @@ async function handleBridgeCameraMode(
 
         params.success({
             rowData: response.results.map(mapCamera), // Leaf nodes - no group: true
-            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
+            ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
