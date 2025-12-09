@@ -26,7 +26,7 @@ ModuleRegistry.registerModules([
 ]);
 
 const gridApi = ref<GridApi | null>(null);
-const { columnDefs, rowGroupCols, currentMode, setGroupingMode } = useGroupingConfig();
+const { columnDefs, currentMode, setGroupingMode } = useGroupingConfig();
 
 // Grid options
 const gridOptions = computed<GridOptions>(() => ({
@@ -54,23 +54,6 @@ const gridOptions = computed<GridOptions>(() => ({
   rowSelection: 'multiple',
   suppressAggFuncInHeader: true,
   groupDefaultExpanded: 0, // Collapse all by default
-  autoGroupColumnDef: {
-    headerName: 'Groups',
-    minWidth: 300,
-    cellRendererParams: {
-      suppressCount: false, // Show row count in groups
-      innerRenderer: (params: any) => {
-        if (params.node.group) {
-          const level = params.node.level;
-          const levelName = level === 0
-            ? (currentMode.value === 'bridge-camera' ? 'Bridge' : 'Location')
-            : 'Bridge';
-          return `${levelName}: ${params.value}`;
-        }
-        return params.value;
-      }
-    }
-  },
   defaultColDef: {
     flex: 1,
     minWidth: 100,
