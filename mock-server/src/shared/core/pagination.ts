@@ -4,7 +4,9 @@ import { PaginatedResponse, PageToken } from './types.js';
  * Encode page token to base64 string
  */
 export function encodePageToken(token: PageToken): string {
-  return Buffer.from(JSON.stringify(token)).toString('base64');
+  const jsonString = JSON.stringify(token);
+  // Use btoa for base64 encoding (works in browsers and Node.js 18+)
+  return btoa(jsonString);
 }
 
 /**
@@ -12,7 +14,8 @@ export function encodePageToken(token: PageToken): string {
  */
 export function decodePageToken(token: string): PageToken {
   try {
-    const decoded = Buffer.from(token, 'base64').toString();
+    // Use atob for base64 decoding (works in browsers and Node.js 18+)
+    const decoded = atob(token);
     return JSON.parse(decoded);
   } catch (error) {
     throw new Error('Invalid page token');

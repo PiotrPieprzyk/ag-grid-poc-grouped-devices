@@ -6,6 +6,76 @@ interface DatasourceConfig {
     groupingMode: GroupingMode;
 }
 
+interface TokenCache {
+    nextPageToken?: string;
+    prevPageToken?: string;
+    lastStartRow: number;
+}
+
+// Token cache keyed by hierarchy path (e.g., "level:0" or "level:2:locationId:bridgeId")
+const tokenCache = new Map<string, TokenCache>();
+
+/**
+ * Generate a unique cache key for a given hierarchy level and group keys
+ */
+function getCacheKey(level: number, groupKeys: string[]): string {
+    return `level:${level}:${groupKeys.join(':')}`;
+}
+
+/**
+ * Determine which page token to use based on navigation direction
+ */
+function getPageToken(cacheKey: string, startRow: number): string | undefined {
+    const cached = tokenCache.get(cacheKey);
+
+    if (!cached) {
+        // First request for this cache key
+        console.log(`[Token Cache] No cached tokens for ${cacheKey}, starting fresh`);
+        return undefined;
+    }
+
+    if (startRow === 0) {
+        // Going back to the beginning
+        console.log(`[Token Cache] Going back to start for ${cacheKey}`);
+        return undefined;
+    }
+
+    if (startRow > cached.lastStartRow) {
+        // Moving forward - use next token
+        console.log(`[Token Cache] Moving forward for ${cacheKey}, using nextPageToken`);
+        return cached.nextPageToken;
+    } else if (startRow < cached.lastStartRow) {
+        // Moving backward - use prev token
+        console.log(`[Token Cache] Moving backward for ${cacheKey}, using prevPageToken`);
+        return cached.prevPageToken;
+    }
+
+    // Same startRow - shouldn't happen normally, but return undefined to be safe
+    console.log(`[Token Cache] Same startRow for ${cacheKey}, using undefined`);
+    return undefined;
+}
+
+/**
+ * Update token cache with new tokens from response
+ */
+function updateTokenCache(
+    cacheKey: string,
+    startRow: number,
+    nextPageToken?: string,
+    prevPageToken?: string
+): void {
+    console.log(`[Token Cache] Updating cache for ${cacheKey}`, {
+        startRow,
+        hasNextToken: !!nextPageToken,
+        hasPrevToken: !!prevPageToken
+    });
+    tokenCache.set(cacheKey, {
+        nextPageToken,
+        prevPageToken,
+        lastStartRow: startRow
+    });
+}
+
 /**
  * Create server-side datasource for AG Grid
  * Handles hierarchical loading based on groupKeys
@@ -100,46 +170,60 @@ async function handleLocationBridgeCameraMode(
     startRow: number,
     statusFilter?: string[]
 ) {
+    const cacheKey = getCacheKey(level, groupKeys);
+
     if (level === 0) {
         // Load top-level: Locations
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getLocations({
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        response.nextPageToken && console.log('[Datasource] Locations response nextPageToken:', JSON.parse(atob(response.nextPageToken)));
+        response.prevPageToken && console.log('[Datasource] Locations response prevPageToken:', JSON.parse(atob(response.prevPageToken)))
+        
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapLocation),
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Bridges for a Location
         const locationId = groupKeys[0];
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getBridges({
             locationId,
             status__in: statusFilter,
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapBridge),
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 2) {
         // Load Cameras for a Bridge
         const locationId = groupKeys[0];
         const bridgeId = groupKeys[1];
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getCameras({
             locationId,
             bridgeId,
             status__in: statusFilter,
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapCamera), // Leaf nodes - no group: true
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
@@ -155,30 +239,38 @@ async function handleLocationCameraMode(
     startRow: number,
     statusFilter?: string[]
 ) {
+    const cacheKey = getCacheKey(level, groupKeys);
+
     if (level === 0) {
         // Load top-level: Locations
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getLocations({
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapLocation),
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Cameras for a Location (skip bridges)
         const locationId = groupKeys[0];
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getCameras({
             locationId,
             status__in: statusFilter,
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results, // Leaf nodes - no group: true
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
@@ -194,38 +286,40 @@ async function handleBridgeCameraMode(
     startRow: number,
     statusFilter?: string[]
 ) {
+    const cacheKey = getCacheKey(level, groupKeys);
+
     if (level === 0) {
         // Load top-level: Bridges (all bridges, not grouped by location)
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getBridges({
             status__in: statusFilter,
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapBridge),
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     } else if (level === 1) {
         // Load Cameras for a Bridge
         const bridgeId = groupKeys[0];
+        const pageToken = getPageToken(cacheKey, startRow);
         const response = await getCameras({
             bridgeId,
             status__in: statusFilter,
             pageSize,
-            pageToken: startRow > 0 ? encodePageToken(startRow) : undefined
+            pageToken
         });
+
+        updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
             rowData: response.results.map(mapCamera), // Leaf nodes - no group: true
-            rowCount: response.totalSize
+            ...(response.nextPageToken ? {lastRow: true} : {}) // Provide rowCount only if more pages exist
         });
     }
 }
 
-/**
- * Simple page token encoding (offset-based)
- */
-function encodePageToken(offset: number): string {
-    return btoa(JSON.stringify({offset}));
-}

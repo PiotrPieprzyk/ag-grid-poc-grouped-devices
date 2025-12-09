@@ -46,10 +46,10 @@ const gridOptions = computed<GridOptions>(() => ({
     return dataItem.id;
   },
 
-  cacheBlockSize: 100,
-  maxBlocksInCache: 10,
-  maxConcurrentDatasourceRequests: 2,
-  blockLoadDebounceMillis: 300,
+  cacheBlockSize: 10,
+  maxBlocksInCache: 1000,
+  maxConcurrentDatasourceRequests: 1,
+  blockLoadDebounceMillis: 0,
   animateRows: true,
   rowSelection: 'multiple',
   suppressAggFuncInHeader: true,

@@ -76,9 +76,9 @@ export function generateCameras(
 export function generateInitialData() {
   console.log('[Generator] Generating initial dataset...');
 
-  const locations = generateLocations(100);
-  const bridges = generateBridges(100, 5);
-  const cameras = generateCameras(bridges, 10);
+  const locations = generateLocations(2);
+  const bridges = generateBridges(2, 2);
+  const cameras = generateCameras(bridges, 200);
 
   console.log(`[Generator] Generated:
     - ${locations.length} locations
