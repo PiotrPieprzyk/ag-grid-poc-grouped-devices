@@ -65,7 +65,17 @@ const gridOptions = computed<GridOptions>(() => ({
     minWidth: 100,
     resizable: true,
     sortable: false
+  },
+  onRowGroupOpened: (params) => {
+    if (!params.expanded) {  // Group was collapsed
+      const route = params.node.getRoute(); // Get the group path
+      params.api.refreshServerSide({
+        route: route,
+        purge: true
+      });
+    }
   }
+
 }));
 
 // Setup auto-refresh (30 seconds)
