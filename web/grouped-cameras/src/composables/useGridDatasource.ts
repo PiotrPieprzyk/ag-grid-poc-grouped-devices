@@ -269,7 +269,7 @@ async function handleLocationCameraMode(
         updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
 
         params.success({
-            rowData: response.results, // Leaf nodes - no group: true
+            rowData: response.results.map(mapCamera), // Leaf nodes - no group: true
             ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
         });
     }

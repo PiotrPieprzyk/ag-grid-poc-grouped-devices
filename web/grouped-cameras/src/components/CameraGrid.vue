@@ -33,8 +33,7 @@ const gridOptions = computed<GridOptions>(() => ({
   columnDefs: columnDefs.value,
   rowModelType: 'serverSide',
   serverSideDatasource: createServerSideDatasource({
-    groupingMode: currentMode.value,
-    
+    groupingMode: currentMode.value
   }),
 
   // Critical: Tell AG Grid which rows are groups
@@ -70,6 +69,17 @@ function onGridReady(event: GridReadyEvent) {
   gridApi.value = event.api;
   console.log('[CameraGrid] Grid ready');
 }
+
+// Watch for grouping changes and reset datasource
+watch(currentMode, () => {
+  console.log('[CameraGrid] Grouping mode changed, updating datasource');
+  if (gridApi.value) {
+    gridApi.value.setGridOption('serverSideDatasource',
+      createServerSideDatasource({ groupingMode: currentMode.value })
+    );
+    gridApi.value.setGridOption('columnDefs', columnDefs.value);
+  }
+});
 
 // Expose methods to parent
 defineExpose({
