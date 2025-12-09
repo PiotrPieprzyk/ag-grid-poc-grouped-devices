@@ -11,7 +11,7 @@ import {
   ServerSideRowModelModule,
   RowGroupingModule,
   SetFilterModule,
-  MenuModule
+  MenuModule, ServerSideRowModelApiModule
 } from 'ag-grid-enterprise';
 import { useGroupingConfig } from '../composables/useGroupingConfig';
 import { createServerSideDatasource } from '../composables/useGridDatasource';
@@ -20,6 +20,7 @@ import { useAutoRefresh } from '../composables/useAutoRefresh';
 // Register AG Grid modules
 ModuleRegistry.registerModules([
   ServerSideRowModelModule,
+  ServerSideRowModelApiModule,
   RowGroupingModule,
   SetFilterModule,
   MenuModule
@@ -46,6 +47,11 @@ const gridOptions = computed<GridOptions>(() => ({
     return dataItem.id;
   },
 
+  // Critical: Tell AG Grid how to identify rows for transactions
+  getRowId: (params) => {
+    return params.data.id;
+  },
+
   cacheBlockSize: 10,
   maxBlocksInCache: 1000,
   maxConcurrentDatasourceRequests: 1,
@@ -63,7 +69,7 @@ const gridOptions = computed<GridOptions>(() => ({
 }));
 
 // Setup auto-refresh (30 seconds)
-const { refreshVisibleRows } = useAutoRefresh(gridApi, 30000);
+const { refreshVisibleRows } = useAutoRefresh(gridApi, currentMode, 30000);
 
 function onGridReady(event: GridReadyEvent) {
   gridApi.value = event.api;

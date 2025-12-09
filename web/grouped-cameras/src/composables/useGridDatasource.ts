@@ -99,7 +99,7 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
 
             try {
                 // Extract status filter if present
-                const statusFilter = filterModel?.status?.values as string[] | undefined;
+                const statusFilter = (filterModel as any)?.status?.values as string[] | undefined;
 
                 // Determine what to load based on hierarchy level and grouping mode
                 if (config.groupingMode === 'location-bridge-camera') {
@@ -138,23 +138,20 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
     };
 }
 
-const mapCamera = (cam: any) => ({
+export const mapCamera = (cam: any) => ({
     ...cam,
-    cameraId: cam.id,
-    id: undefined
+    cameraId: cam.id
 });
 
-const mapBridge = (bridge: any) => ({
+export const mapBridge = (bridge: any) => ({
     ...bridge,
     bridgeId: bridge.id,
-    id: undefined,
     group: true
 });
 
-const mapLocation = (loc: any) => ({
+export const mapLocation = (loc: any) => ({
     ...loc,
     locationId: loc.id,
-    id: undefined,
     group: true
 });
                                     
