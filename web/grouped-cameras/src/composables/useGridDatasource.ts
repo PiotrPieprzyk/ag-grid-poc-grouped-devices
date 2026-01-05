@@ -1,6 +1,6 @@
 import type {IServerSideDatasource, IServerSideGetRowsParams} from 'ag-grid-community';
 import {getBridges, getCameras, PaginatedResponse} from 'mock-server';
-import {getCacheKey, getPageToken, updateTokenCache} from "../service/TokenCache.ts";
+import {cameraGridTokenCache} from "../service/CameraGridTokenCache.ts";
 
 interface DatasourceConfig {
     groupingMode: GroupingMode;
@@ -39,8 +39,8 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                     params.fail();
                     return
                 }
-                const cacheKey = getCacheKey(currentLevel, groupKeys);
-                const pageToken = getPageToken(cacheKey, startRow);
+                const cacheKey = cameraGridTokenCache.getCacheKey(currentLevel, groupKeys);
+                const pageToken = cameraGridTokenCache.getPageToken(cacheKey, startRow);
 
                 const api = (
                     currentLevel === 0 ? getBridges : getCameras
@@ -53,7 +53,7 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                     pageToken,
                     ...(filters || {})
                 })
-                updateTokenCache(cacheKey, response.nextPageToken);
+                cameraGridTokenCache.updateTokenCache(cacheKey, response.nextPageToken);
                 
                 params.success({
                     rowData: response.results.map(mapper), // Leaf nodes - no group: true
