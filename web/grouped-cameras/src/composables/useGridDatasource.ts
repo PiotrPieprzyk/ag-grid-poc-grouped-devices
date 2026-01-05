@@ -56,7 +56,7 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                 cameraGridTokenCache.updateTokenCache(cacheKey, response.nextPageToken);
                 
                 params.success({
-                    rowData: response.results.map(mapper), // Leaf nodes - no group: true
+                    rowData: response.results.map(mapper),
                     ...(params.request.endRow === response.totalSize ? {rowCount: params.request.endRow} : {}) // Provide rowCount only if more pages exist
                 });
                 

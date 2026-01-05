@@ -32,7 +32,7 @@ function extractVisibleEntities(gridApi: GridApi, groupingMode: GroupingMode): V
     };
 
     const nodes = gridApi.getRenderedNodes();
-
+    
     nodes.forEach(node => {
         if (!node.data) return;
 

@@ -23,12 +23,10 @@ export class TokenCache {
         const cached = this.cache.get(cacheKey);
 
         if (!cached) {
-            console.log(`[Token Cache] No cached tokens for ${cacheKey}, starting fresh`);
             return undefined;
         }
 
         if (startRow === 0) {
-            console.log(`[Token Cache] Going back to start for ${cacheKey}`);
             return undefined;
         }
 
