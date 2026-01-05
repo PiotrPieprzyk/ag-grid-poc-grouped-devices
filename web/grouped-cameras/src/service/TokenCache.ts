@@ -48,4 +48,11 @@ export class TokenCache {
             nextPageToken,
         });
     }
+
+    /**
+     * Clear all cached tokens
+     */
+    clearAll(): void {
+        this.cache.clear();
+    }
 }

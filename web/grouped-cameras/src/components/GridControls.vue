@@ -7,6 +7,7 @@ const emit = defineEmits<{
   refresh: []
   groupingChange: [mode: GroupingMode]
   reset: []
+  purgeAndRefresh: []
 }>();
 
 const loading = ref(false);
@@ -53,6 +54,12 @@ function resetGrid() {
   message.value = 'Grid reset (unmounted and remounted)';
   setTimeout(() => message.value = '', 2000);
 }
+
+function purgeAndRefresh() {
+  emit('purgeAndRefresh');
+  message.value = 'Cache purged and data refreshed';
+  setTimeout(() => message.value = '', 2000);
+}
 </script>
 
 <template>
@@ -74,6 +81,9 @@ function resetGrid() {
         </button>
         <button @click="manualRefresh" class="btn-refresh">
           🔄 Refresh Data
+        </button>
+        <button @click="purgeAndRefresh" class="btn-purge">
+          🗑️ Purge & Refresh
         </button>
         <button @click="resetGrid" class="btn-reset">
           ⚡ Reset Grid
@@ -152,6 +162,15 @@ button.btn-refresh {
 
 button.btn-refresh:hover:not(:disabled) {
   box-shadow: 0 4px 8px rgba(72, 187, 120, 0.4);
+}
+
+button.btn-purge {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  box-shadow: 0 2px 4px rgba(237, 137, 54, 0.3);
+}
+
+button.btn-purge:hover:not(:disabled) {
+  box-shadow: 0 4px 8px rgba(237, 137, 54, 0.4);
 }
 
 button.btn-reset {

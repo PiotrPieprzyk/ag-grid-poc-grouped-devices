@@ -10,6 +10,10 @@ function handleRefresh() {
   gridRef.value?.refreshVisibleRows();
 }
 
+function handlePurgeAndRefresh() {
+  console.log('[App] Purge and refresh');
+  gridRef.value?.purgeCache();
+}
 
 async function handleReset() {
   console.log('[App] Resetting grid - unmounting...');
@@ -30,6 +34,7 @@ async function handleReset() {
     <GridControls
       @refresh="handleRefresh"
       @reset="handleReset"
+      @purge-and-refresh="handlePurgeAndRefresh"
     />
 
     <main class="app-main">
