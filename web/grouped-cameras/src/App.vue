@@ -19,6 +19,7 @@ async function handleReset() {
   console.log('[App] Resetting grid - unmounting...');
   showGrid.value = false;
   await nextTick();
+  await (new Promise(resolve => setTimeout(resolve, 2000)));
   console.log('[App] Remounting grid...');
   showGrid.value = true;
 }
@@ -39,6 +40,9 @@ async function handleReset() {
 
     <main class="app-main">
       <CameraGrid v-if="showGrid" ref="gridRef" />
+      <div v-else style="padding: 2rem; text-align: center; color: #666;">
+        <p>Grid is resetting... Please wait.</p>
+      </div>
     </main>
   </div>
 </template>

@@ -1,9 +1,11 @@
 import type {IServerSideDatasource, IServerSideGetRowsParams} from 'ag-grid-community';
+import {Ref} from "vue";
 import {getBridges, getCameras, PaginatedResponse} from 'mock-server';
 import {cameraGridTokenCache} from "../service/CameraGridTokenCache.ts";
 
 interface DatasourceConfig {
     groupingMode: GroupingMode;
+    disabled: Ref<boolean>;
 }
 
 export type GroupingMode = 'bridge-camera';
@@ -53,6 +55,11 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                     pageToken,
                     ...(filters || {})
                 })
+                
+                if (config.disabled.value) {
+                    return;
+                }
+                
                 cameraGridTokenCache.updateTokenCache(cacheKey, response.nextPageToken);
                 
                 params.success({

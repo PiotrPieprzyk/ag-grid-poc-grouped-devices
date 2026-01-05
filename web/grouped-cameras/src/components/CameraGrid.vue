@@ -31,9 +31,36 @@ ModuleRegistry.registerModules([
 
 const gridApi = ref<GridApi | null>(null);
 const currentMode = ref<GroupingMode>('bridge-camera');
+const disabled = ref(false);
 
 // Grid options
 const gridOptions = computed<GridOptions>(() => {
+  // Create base datasource
+  const baseDatasource = createServerSideDatasource({
+    groupingMode: currentMode.value,
+    disabled: disabled
+  });
+
+  // Wrap datasource to track rowCount
+  const wrappedDatasource = {
+    getRows: (params: any) => {
+      const originalSuccess = params.success;
+
+      // Wrap success callback to intercept rowCount
+      params.success = (result: any) => {
+        // Track rowCount if provided
+        if (result.rowCount !== undefined) {
+          registerRouteRowCount(params.request.groupKeys || [], result.rowCount);
+        }
+
+        // Call original success
+        originalSuccess(result);
+      };
+
+      // Call original getRows
+      baseDatasource.getRows(params);
+    }
+  };
 
   return {
     columnDefs: [
@@ -56,9 +83,7 @@ const gridOptions = computed<GridOptions>(() => {
       }
     ],
     rowModelType: 'serverSide',
-    serverSideDatasource: createServerSideDatasource({
-      groupingMode: currentMode.value
-    }),
+    serverSideDatasource: wrappedDatasource,
 
     // Critical: Tell AG Grid which rows are groups
     isServerSideGroup: (dataItem: any) => {
@@ -79,7 +104,7 @@ const gridOptions = computed<GridOptions>(() => {
     maxBlocksInCache: 1000,
     maxConcurrentDatasourceRequests: 1,
     blockLoadDebounceMillis: 0,
-    animateRows: true,
+    animateRows: false,
     rowSelection: 'multiple',
     suppressAggFuncInHeader: true,
     defaultColDef: {
@@ -172,6 +197,15 @@ function captureGridState(): CachedGridState {
     }
   });
 
+  // Add rowCount from tracked counts if available
+  for (const [routeKey, routeData] of dataByRoute.entries()) {
+    const trackedCount = routeRowCounts.get(routeKey);
+    if (trackedCount !== undefined) {
+      routeData.rowCount = trackedCount;
+      console.log(`[CameraGrid] Captured rowCount=${trackedCount} for route: ${routeKey || '(root)'}`);
+    }
+  }
+
   const scrollTop = getScrollPosition();
 
   return {
@@ -185,6 +219,18 @@ function captureGridState(): CachedGridState {
 // Store pending cache state for use in event handlers
 const pendingCacheRestore = ref<CachedGridState | null>(null);
 
+// Track rowCount per route (updated when we know we have all data)
+const routeRowCounts = new Map<string, number>();
+
+/**
+ * Register rowCount for a specific route when we know we have all the data
+ */
+function registerRouteRowCount(groupKeys: string[], rowCount: number) {
+  const routeKey = groupKeys.join('::');
+  routeRowCounts.set(routeKey, rowCount);
+  console.log(`[CameraGrid] Registered rowCount=${rowCount} for route: ${routeKey || '(root)'}`);
+}
+
 /**
  * Inject cached data using AG Grid API
  */
@@ -197,12 +243,18 @@ async function applyServerSideRowDataFromCache(cachedState: CachedGridState) {
 
     console.log(`[CameraGrid] Restoring route="${routeKey}" with ${routeData.rowData.length} rows, route array:`, route);
 
+    // Restore rowCount to tracking map for future captures
+    if (routeData.rowCount !== undefined) {
+      routeRowCounts.set(routeKey, routeData.rowCount);
+      console.log(`[CameraGrid] Restored rowCount=${routeData.rowCount} to tracking map for route: ${routeKey || '(root)'}`);
+    }
+
     // Use successParams - same format as datasource params.success()
     gridApi.value.applyServerSideRowData({
       route: route,
       successParams: {
         rowData: routeData.rowData,
-        ...(routeData.rowCount && {rowCount: routeData.rowCount} || {})
+        ...(routeData.rowCount !== undefined ? {rowCount: routeData.rowCount} : {})
       }
     });
 
@@ -278,12 +330,12 @@ function onFirstDataRendered() {
   restoreExpandedGroups(pendingCacheRestore.value.expandedGroups);
 
   // Wait for expansion animations before scrolling
-  setTimeout(() => {
-    if (pendingCacheRestore.value) {
+  // setTimeout(() => {
+  //   if (pendingCacheRestore.value) {
       restoreScrollPosition(pendingCacheRestore.value.scrollTop);
       pendingCacheRestore.value = null;  // Clear pending state
-    }
-  }, 300);
+    // }
+  // }, 300);
 }
 
 async function onGridReady(event: GridReadyEvent) {
@@ -302,6 +354,10 @@ onBeforeUnmount(() => {
     expandedCount: state.expandedGroups.size,
     scrollTop: state.scrollTop
   });
+
+  disabled.value = true;
+
+  console.log(gridApi.value?.getCacheBlockState())
 });
 
 /**
@@ -311,8 +367,11 @@ function purgeCache() {
   console.log('[CameraGrid] Purging cache...');
   cameraGridRowDataCache.clearState(CAMERA_GRID_CACHE_KEY);
 
-  // Also clear token cache
+  // Clear token cache
   cameraGridTokenCache.clearAll();
+
+  // Clear rowCount tracking
+  routeRowCounts.clear();
 
   // Refresh grid from scratch
   if (gridApi.value) {

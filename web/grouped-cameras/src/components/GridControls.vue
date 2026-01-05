@@ -45,20 +45,14 @@ async function setCameraStatus(status: 'online' | 'offline') {
 
 function manualRefresh() {
   emit('refresh');
-  message.value = 'Data refreshed';
-  setTimeout(() => message.value = '', 2000);
 }
 
 function resetGrid() {
   emit('reset');
-  message.value = 'Grid reset (unmounted and remounted)';
-  setTimeout(() => message.value = '', 2000);
 }
 
 function purgeAndRefresh() {
   emit('purgeAndRefresh');
-  message.value = 'Cache purged and data refreshed';
-  setTimeout(() => message.value = '', 2000);
 }
 </script>
 
