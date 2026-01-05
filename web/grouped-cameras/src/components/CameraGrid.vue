@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { AgGridVue } from 'ag-grid-vue3';
+import {ref, computed, watch, onMounted, onBeforeUnmount} from 'vue';
+import {AgGridVue} from 'ag-grid-vue3';
 import {
   ModuleRegistry,
   type GridApi,
@@ -13,9 +13,9 @@ import {
   SetFilterModule,
   MenuModule, ServerSideRowModelApiModule
 } from 'ag-grid-enterprise';
-import { useGroupingConfig } from '../composables/useGroupingConfig';
-import { createServerSideDatasource } from '../composables/useGridDatasource';
-import { useAutoRefresh } from '../composables/useAutoRefresh';
+import {GroupingMode} from '../composables/useGridDatasource.ts';
+import {createServerSideDatasource} from '../composables/useGridDatasource';
+import {useAutoRefresh} from '../composables/useAutoRefresh';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([
@@ -27,79 +27,87 @@ ModuleRegistry.registerModules([
 ]);
 
 const gridApi = ref<GridApi | null>(null);
-const { columnDefs, currentMode, setGroupingMode } = useGroupingConfig();
+const currentMode = ref<GroupingMode>('bridge-camera');
 
 // Grid options
-const gridOptions = computed<GridOptions>(() => ({
-  columnDefs: columnDefs.value,
-  rowModelType: 'serverSide',
-  serverSideDatasource: createServerSideDatasource({
-    groupingMode: currentMode.value
-  }),
+const gridOptions = computed<GridOptions>(() => {
 
-  // Critical: Tell AG Grid which rows are groups
-  isServerSideGroup: (dataItem: any) => {
-    return dataItem.group === true;
-  },
+  return {
+    columnDefs: [
+      {
+        field: 'bridgeId',
+        hide: true,
+        showRowGroup: false,
+        rowGroup: true
+      },
+      {
+        field: 'cameraId',
+        headerName: 'ID',
+        minWidth: 150,
+        filter: false,
+        showRowGroup: false
+      },
+      {
+        field: 'status',
+        headerName: 'Status',
+      }
+    ],
+    rowModelType: 'serverSide',
+    serverSideDatasource: createServerSideDatasource({
+      groupingMode: currentMode.value
+    }),
 
-  // Critical: Tell AG Grid how to get the group key
-  getServerSideGroupKey: (dataItem: any) => {
-    return dataItem.id;
-  },
+    // Critical: Tell AG Grid which rows are groups
+    isServerSideGroup: (dataItem: any) => {
+      return dataItem.group === true;
+    },
 
-  // Critical: Tell AG Grid how to identify rows for transactions
-  getRowId: (params) => {
-    return params.data.id;
-  },
+    // Critical: Tell AG Grid how to get the group key
+    getServerSideGroupKey: (dataItem: any) => {
+      return dataItem.id;
+    },
 
-  cacheBlockSize: 10,
-  maxBlocksInCache: 1000,
-  maxConcurrentDatasourceRequests: 1,
-  blockLoadDebounceMillis: 0,
-  animateRows: true,
-  rowSelection: 'multiple',
-  suppressAggFuncInHeader: true,
-  groupDefaultExpanded: 0, // Collapse all by default
-  defaultColDef: {
-    flex: 1,
-    minWidth: 100,
-    resizable: true,
-    sortable: false
-  },
-  onRowGroupOpened: (params) => {
-    if (!params.expanded) {  // Group was collapsed
-      const route = params.node.getRoute(); // Get the group path
-      params.api.refreshServerSide({
-        route: route,
-        purge: true
-      });
+    // Critical: Tell AG Grid how to identify rows for transactions
+    getRowId: (params) => {
+      return params.data.id;
+    },
+
+    cacheBlockSize: 10,
+    maxBlocksInCache: 1000,
+    maxConcurrentDatasourceRequests: 1,
+    blockLoadDebounceMillis: 0,
+    animateRows: true,
+    rowSelection: 'multiple',
+    suppressAggFuncInHeader: true,
+    defaultColDef: {
+      flex: 1,
+      minWidth: 100,
+      resizable: true,
+      sortable: false
+    },
+    onRowGroupOpened: (params) => {
+      if (!params.expanded) {  // Group was collapsed
+        const route = params.node.getRoute(); // Get the group path
+        params.api.refreshServerSide({
+          route: route,
+          purge: true
+        });
+      }
     }
-  }
-
-}));
+  };
+});
 
 // Setup auto-refresh (30 seconds)
-const { refreshVisibleRows } = useAutoRefresh(gridApi, currentMode, 30000);
+const {refreshVisibleRows} = useAutoRefresh(gridApi, currentMode, 30000);
 
-function onGridReady(event: GridReadyEvent) {
+async function onGridReady(event: GridReadyEvent) {
   gridApi.value = event.api;
   console.log('[CameraGrid] Grid ready');
 }
 
-// Watch for grouping changes and reset datasource
-watch(currentMode, () => {
-  console.log('[CameraGrid] Grouping mode changed, updating datasource');
-  if (gridApi.value) {
-    gridApi.value.setGridOption('serverSideDatasource',
-      createServerSideDatasource({ groupingMode: currentMode.value })
-    );
-    gridApi.value.setGridOption('columnDefs', columnDefs.value);
-  }
-});
 
 // Expose methods to parent
 defineExpose({
-  setGroupingMode,
   refreshVisibleRows
 });
 </script>
@@ -107,10 +115,10 @@ defineExpose({
 <template>
   <div class="camera-grid-container">
     <AgGridVue
-      style="width: 100%; height: 100%;"
-      class="ag-theme-quartz"
-      :gridOptions="gridOptions"
-      @grid-ready="onGridReady"
+        style="width: 100%; height: 100%;"
+        class="ag-theme-quartz"
+        :gridOptions="gridOptions"
+        @grid-ready="onGridReady"
     />
   </div>
 </template>

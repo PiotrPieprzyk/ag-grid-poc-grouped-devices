@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { updateBridgeStatus, updateCameraStatus } from 'mock-server';
-import type { GroupingMode } from '../composables/useGroupingConfig';
+import type { GroupingMode } from '../composables/useGridDatasource.ts';
 
 const emit = defineEmits<{
   refresh: []
   groupingChange: [mode: GroupingMode]
+  reset: []
 }>();
 
 const loading = ref(false);
@@ -41,13 +42,15 @@ async function setCameraStatus(status: 'online' | 'offline') {
   }
 }
 
-function changeGrouping(mode: GroupingMode) {
-  emit('groupingChange', mode);
-}
-
 function manualRefresh() {
   emit('refresh');
   message.value = 'Data refreshed';
+  setTimeout(() => message.value = '', 2000);
+}
+
+function resetGrid() {
+  emit('reset');
+  message.value = 'Grid reset (unmounted and remounted)';
   setTimeout(() => message.value = '', 2000);
 }
 </script>
@@ -72,20 +75,8 @@ function manualRefresh() {
         <button @click="manualRefresh" class="btn-refresh">
           🔄 Refresh Data
         </button>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <h3>Grouping Mode</h3>
-      <div class="button-row">
-        <button @click="changeGrouping('location-bridge-camera')">
-          Location → Bridge → Camera
-        </button>
-        <button @click="changeGrouping('location-camera')">
-          Location → Camera
-        </button>
-        <button @click="changeGrouping('bridge-camera')">
-          Bridge → Camera
+        <button @click="resetGrid" class="btn-reset">
+          ⚡ Reset Grid
         </button>
       </div>
     </div>
@@ -161,6 +152,15 @@ button.btn-refresh {
 
 button.btn-refresh:hover:not(:disabled) {
   box-shadow: 0 4px 8px rgba(72, 187, 120, 0.4);
+}
+
+button.btn-reset {
+  background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+  box-shadow: 0 2px 4px rgba(245, 101, 101, 0.3);
+}
+
+button.btn-reset:hover:not(:disabled) {
+  box-shadow: 0 4px 8px rgba(245, 101, 101, 0.4);
 }
 
 .message {
