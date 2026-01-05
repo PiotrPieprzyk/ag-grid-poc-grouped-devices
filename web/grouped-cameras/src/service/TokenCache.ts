@@ -1,7 +1,5 @@
 interface TokenCache {
     nextPageToken?: string;
-    prevPageToken?: string;
-    lastStartRow: number;
 }
 
 // Token cache keyed by hierarchy path (e.g., "level:0" or "level:2:locationId:bridgeId")
@@ -21,24 +19,18 @@ export function getPageToken(cacheKey: string, startRow: number): string | undef
     const cached = tokenCache.get(cacheKey);
 
     if (!cached) {
-        // First request for this cache key
         console.log(`[Token Cache] No cached tokens for ${cacheKey}, starting fresh`);
         return undefined;
     }
 
     if (startRow === 0) {
-        // Going back to the beginning
         console.log(`[Token Cache] Going back to start for ${cacheKey}`);
         return undefined;
     }
 
-    if (startRow > cached.lastStartRow) {
-        // Moving forward - use next token
+    if (startRow > 0) {
         return cached.nextPageToken;
-    } else if (startRow < cached.lastStartRow) {
-        // Moving backward - use prev token
-        return cached.prevPageToken;
-    }
+    } 
 
     return undefined;
 }
@@ -48,13 +40,9 @@ export function getPageToken(cacheKey: string, startRow: number): string | undef
  */
 export function updateTokenCache(
     cacheKey: string,
-    startRow: number,
     nextPageToken?: string,
-    prevPageToken?: string
 ): void {
     tokenCache.set(cacheKey, {
         nextPageToken,
-        prevPageToken,
-        lastStartRow: startRow
     });
 }

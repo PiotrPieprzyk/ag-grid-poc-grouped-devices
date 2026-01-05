@@ -2,7 +2,6 @@
 import { ref, nextTick } from 'vue';
 import CameraGrid from './components/CameraGrid.vue';
 import GridControls from './components/GridControls.vue';
-import type { GroupingMode } from './composables/useGridDatasource.ts';
 
 const gridRef = ref<InstanceType<typeof CameraGrid> | null>(null);
 const showGrid = ref(true);
@@ -11,9 +10,6 @@ function handleRefresh() {
   gridRef.value?.refreshVisibleRows();
 }
 
-function handleGroupingChange(mode: GroupingMode) {
-  gridRef.value?.setGroupingMode(mode);
-}
 
 async function handleReset() {
   console.log('[App] Resetting grid - unmounting...');
@@ -33,7 +29,6 @@ async function handleReset() {
 
     <GridControls
       @refresh="handleRefresh"
-      @grouping-change="handleGroupingChange"
       @reset="handleReset"
     />
 

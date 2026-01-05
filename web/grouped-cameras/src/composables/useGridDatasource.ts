@@ -40,7 +40,6 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                     return
                 }
                 const cacheKey = getCacheKey(currentLevel, groupKeys);
-
                 const pageToken = getPageToken(cacheKey, startRow);
 
                 const api = (
@@ -54,7 +53,7 @@ export function createServerSideDatasource(config: DatasourceConfig): IServerSid
                     pageToken,
                     ...(filters || {})
                 })
-                updateTokenCache(cacheKey, startRow, response.nextPageToken, response.prevPageToken);
+                updateTokenCache(cacheKey, response.nextPageToken);
                 
                 params.success({
                     rowData: response.results.map(mapper), // Leaf nodes - no group: true
