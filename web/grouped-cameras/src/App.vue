@@ -2,7 +2,7 @@
 import { ref, nextTick } from 'vue';
 import CameraGrid from './components/CameraGrid.vue';
 import GridControls from './components/GridControls.vue';
-import type { GroupingMode } from './composables/useGroupingConfig';
+import type { GroupingMode } from './composables/useGridDatasource.ts';
 
 const gridRef = ref<InstanceType<typeof CameraGrid> | null>(null);
 const showGrid = ref(true);
